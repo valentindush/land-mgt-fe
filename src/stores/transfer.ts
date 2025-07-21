@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase, type Transfer } from '@/lib/supabase'
+import { uploadDocumentToCloudinary } from '@/lib/cloudinary'
 
 export const useTransferStore = defineStore('transfer', () => {
   const transfers = ref<Transfer[]>([])
@@ -10,12 +11,11 @@ export const useTransferStore = defineStore('transfer', () => {
   async function fetchUserTransfers(userId: string) {
     loading.value = true
     error.value = null
-    
+
     try {
       const { data, error: fetchError } = await supabase
         .from('transfers')
         .select('*')
-        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
@@ -103,23 +103,15 @@ export const useTransferStore = defineStore('transfer', () => {
     }
   }
 
-  async function uploadContractDocument(file: File, senderId: string) {
+  async function uploadContractDocument(file: File, userId: string) {
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${senderId}-${Date.now()}.${fileExt}`
-      const filePath = `contract-documents/${fileName}`
+      const result = await uploadDocumentToCloudinary(file, userId, 'contract')
 
-      const { error: uploadError } = await supabase.storage
-        .from('land-documents')
-        .upload(filePath, file)
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed')
+      }
 
-      if (uploadError) throw uploadError
-
-      const { data } = supabase.storage
-        .from('land-documents')
-        .getPublicUrl(filePath)
-
-      return { success: true, url: data.publicUrl }
+      return { success: true, url: result.url }
     } catch (err: any) {
       error.value = err.message
       return { success: false, error: err.message }

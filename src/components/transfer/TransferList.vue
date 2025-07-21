@@ -12,7 +12,7 @@ const transfers = computed(() => transferStore.transfers)
 const loading = computed(() => transferStore.loading)
 
 const editingTransfer = ref<string | null>(null)
-const editRecipientId = ref('')
+const editRecipientName = ref('')
 const showDeleteModal = ref(false)
 const transferToDelete = ref<string | null>(null)
 
@@ -66,37 +66,37 @@ const formatDate = (dateString: string) => {
 }
 
 const canEdit = (transfer: any) => {
-  return transfer.sender_id === authStore.user?.id && transfer.status === 'Pending'
+  return transfer.status === 'Pending'
 }
 
 const canDelete = (transfer: any) => {
-  return transfer.sender_id === authStore.user?.id && transfer.status === 'Pending'
+  return transfer.status === 'Pending'
 }
 
 const startEdit = (transfer: any) => {
   editingTransfer.value = transfer.id
-  editRecipientId.value = transfer.recipient_id
+  editRecipientName.value = transfer.recipient_name
 }
 
 const cancelEdit = () => {
   editingTransfer.value = null
-  editRecipientId.value = ''
+  editRecipientName.value = ''
 }
 
 const saveEdit = async (transferId: string) => {
-  if (!editRecipientId.value.trim()) {
-    toast.error('Validation error', 'Recipient ID cannot be empty')
+  if (!editRecipientName.value.trim()) {
+    toast.error('Validation error', 'Recipient name cannot be empty')
     return
   }
 
   const { success, error } = await transferStore.updateTransfer(transferId, {
-    recipient_id: editRecipientId.value.trim()
+    recipient_name: editRecipientName.value.trim()
   })
 
   if (success) {
     toast.success('Transfer updated', 'The transfer has been updated successfully')
     editingTransfer.value = null
-    editRecipientId.value = ''
+    editRecipientName.value = ''
   } else {
     toast.error('Update failed', error || 'Failed to update transfer')
   }
@@ -128,11 +128,8 @@ const deleteTransfer = async () => {
 }
 
 const getTransferDirection = (transfer: any) => {
-  if (transfer.sender_id === authStore.user?.id) {
-    return 'Outgoing'
-  } else {
-    return 'Incoming'
-  }
+  // Since we don't have sender_id in the new schema, we'll just show "Transfer"
+  return 'Transfer'
 }
 </script>
 
@@ -206,10 +203,10 @@ const getTransferDirection = (transfer: any) => {
                   <div v-if="editingTransfer === transfer.id" class="flex items-center space-x-2">
                     <span>To:</span>
                     <input
-                      v-model="editRecipientId"
+                      v-model="editRecipientName"
                       type="text"
                       class="border border-gray-300 rounded px-2 py-1 text-sm"
-                      placeholder="Recipient ID"
+                      placeholder="Recipient Name"
                     />
                     <button
                       @click="saveEdit(transfer.id)"
@@ -225,10 +222,7 @@ const getTransferDirection = (transfer: any) => {
                     </button>
                   </div>
                   <div v-else>
-                    <p>
-                      <span v-if="getTransferDirection(transfer) === 'Outgoing'">To: {{ transfer.recipient_id }}</span>
-                      <span v-else>From: {{ transfer.sender_id }}</span>
-                    </p>
+                    <p>To: {{ transfer.recipient_name }}</p>
                   </div>
                 </div>
               </div>
@@ -261,9 +255,9 @@ const getTransferDirection = (transfer: any) => {
             </div>
           </div>
           
-          <div v-if="transfer.contract_document" class="mt-2">
+          <div v-if="transfer.contract_document_url" class="mt-2">
             <a
-              :href="transfer.contract_document"
+              :href="transfer.contract_document_url"
               target="_blank"
               class="text-sm text-indigo-600 hover:text-indigo-500"
             >

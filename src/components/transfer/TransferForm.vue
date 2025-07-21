@@ -15,7 +15,7 @@ const authStore = useAuthStore()
 const validationSchema = toFormValidator(
   z.object({
     parcel_id: z.string().min(3, 'Parcel ID must be at least 3 characters'),
-    recipient_id: z.string().min(3, 'Recipient ID must be at least 3 characters')
+    recipient_name: z.string().min(3, 'Recipient name must be at least 3 characters')
   })
 )
 
@@ -24,7 +24,7 @@ const { handleSubmit, errors, defineField, resetForm } = useForm({
 })
 
 const [parcel_id] = defineField('parcel_id')
-const [recipient_id] = defineField('recipient_id')
+const [recipient_name] = defineField('recipient_name')
 
 const contractDocument = ref<File | null>(null)
 const isSubmitting = ref(false)
@@ -97,9 +97,8 @@ const confirmTransfer = async () => {
     // Create transfer with document URL
     const { success, error } = await transferStore.createTransfer({
       parcel_id: formValues.value.parcel_id,
-      sender_id: authStore.user.id,
-      recipient_id: formValues.value.recipient_id,
-      contract_document: url,
+      recipient_name: formValues.value.recipient_name,
+      contract_document_url: url,
       status: 'Pending'
     })
     
@@ -151,7 +150,7 @@ const cancelTransfer = () => {
               >
                 <option value="">Select a parcel to transfer</option>
                 <option v-for="land in userLands" :key="land.id" :value="land.parcel_id">
-                  {{ land.parcel_id }} - {{ land.address }}
+                  Parcel ID: {{ land.parcel_id }} - Size: {{ land.size }} sq m
                 </option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -185,36 +184,36 @@ const cancelTransfer = () => {
           </div>
 
           <div class="sm:col-span-3">
-            <label for="recipient_id" class="block text-sm font-medium text-gray-700 mb-1">Recipient ID</label>
+            <label for="recipient_name" class="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
             <div class="relative">
               <input
-                id="recipient_id"
-                v-model="recipient_id"
+                id="recipient_name"
+                v-model="recipient_name"
                 type="text"
-                placeholder="Enter recipient's user ID"
+                placeholder="Enter recipient's name"
                 class="px-4 py-2.5 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-30 transition duration-150 ease-in-out"
                 :class="{
-                  'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500': errors.recipient_id,
-                  'border-green-500 bg-green-50': recipient_id && !errors.recipient_id
+                  'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500': errors.recipient_name,
+                  'border-green-500 bg-green-50': recipient_name && !errors.recipient_name
                 }"
-                aria-describedby="recipient_id-error"
+                aria-describedby="recipient_name-error"
               />
-              <div v-if="errors.recipient_id" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <div v-if="errors.recipient_name" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
               </div>
-              <div v-else-if="recipient_id" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <div v-else-if="recipient_name" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
               </div>
             </div>
-            <p v-if="errors.recipient_id" id="recipient_id-error" class="mt-2 text-sm text-red-600 flex items-center">
+            <p v-if="errors.recipient_name" id="recipient_name-error" class="mt-2 text-sm text-red-600 flex items-center">
               <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
               </svg>
-              {{ errors.recipient_id }}
+              {{ errors.recipient_name }}
             </p>
           </div>
 

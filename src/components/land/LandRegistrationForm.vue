@@ -12,9 +12,8 @@ const authStore = useAuthStore()
 
 const validationSchema = toFormValidator(
   z.object({
-    parcel_id: z.string().min(3, 'Parcel ID must be at least 3 characters'),
-    address: z.string().min(5, 'Address must be at least 5 characters'),
-    land_size: z.number().positive('Land size must be a positive number'),
+    parcel_id: z.number().positive('Parcel ID must be a positive number'),
+    size: z.number().positive('Size must be a positive number'),
     ownership_type: z.string().min(1, 'Ownership type is required')
   })
 )
@@ -24,14 +23,13 @@ const { handleSubmit, errors, defineField, resetForm } = useForm({
 })
 
 const [parcel_id] = defineField('parcel_id')
-const [address] = defineField('address')
-const [land_size, land_sizeProps] = defineField('land_size', {
+const [size] = defineField('size', {
   initialValue: 0,
   validateOnValueUpdate: false
 })
 const [ownership_type] = defineField('ownership_type')
 
-const proofDocument = ref<File | null>(null)
+const supportingDocument = ref<File | null>(null)
 const isSubmitting = ref(false)
 const documentError = ref('')
 
@@ -39,66 +37,65 @@ const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
     const file = target.files[0]
-    
+
     // Check file type
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
     if (!allowedTypes.includes(file.type)) {
       documentError.value = 'Only PDF, JPEG, and PNG files are allowed'
-      proofDocument.value = null
+      supportingDocument.value = null
       return
     }
-    
+
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       documentError.value = 'File size must be less than 5MB'
-      proofDocument.value = null
+      supportingDocument.value = null
       return
     }
-    
+
     documentError.value = ''
-    proofDocument.value = file
+    supportingDocument.value = file
   }
 }
 
 const onSubmit = handleSubmit(async (values) => {
-  if (!proofDocument.value) {
-    documentError.value = 'Proof of ownership document is required'
+  if (!supportingDocument.value) {
+    documentError.value = 'Supporting document is required'
     return
   }
-  
+
   if (!authStore.user) {
     toast.error('Authentication error', 'You must be logged in to register land')
     return
   }
-  
+
   isSubmitting.value = true
-  
+
   try {
     // Upload document first
-    const { success: uploadSuccess, url, error: uploadError } = await landStore.uploadProofDocument(
-      proofDocument.value,
+    const { success: uploadSuccess, url, error: uploadError } = await landStore.uploadSupportingDocument(
+      supportingDocument.value,
       authStore.user.id
     )
-    
+
     if (!uploadSuccess || !url) {
       throw new Error(uploadError || 'Failed to upload document')
     }
-    
+
     // Register land with document URL
     const { success, error } = await landStore.registerLand({
       parcel_id: values.parcel_id,
-      address: values.address,
-      land_size: values.land_size,
+      size: values.size,
       ownership_type: values.ownership_type,
-      proof_document: url,
-      status: 'Pending',
+      supporting_documents: url,
+      statusa: 'Pending',
       owner_id: authStore.user.id
     })
-    
+
     if (success) {
       toast.success('Land registration submitted', 'Your application has been submitted successfully')
       resetForm()
-      proofDocument.value = null
+      supportingDocument.value = null
     } else {
       toast.error('Registration failed', error || 'Failed to register land')
     }
@@ -128,7 +125,7 @@ const onSubmit = handleSubmit(async (values) => {
               <input
                 id="parcel_id"
                 v-model="parcel_id"
-                type="text"
+                type="number"
                 placeholder="Enter parcel ID"
                 class="px-4 py-2.5 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-30 transition duration-150 ease-in-out"
                 :class="{
@@ -157,74 +154,42 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="sm:col-span-3">
-            <label for="land_size" class="block text-sm font-medium text-gray-700 mb-1">Land Size (sq meters)</label>
+            <label for="size" class="block text-sm font-medium text-gray-700 mb-1">Size (sq meters)</label>
             <div class="relative">
               <input
-                id="land_size"
-                v-model="land_size"
+                id="size"
+                v-model="size"
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="Enter land size"
+                placeholder="Enter size"
                 class="px-4 py-2.5 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-30 transition duration-150 ease-in-out"
                 :class="{
-                  'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500': errors.land_size,
-                  'border-green-500 bg-green-50': land_size > 0 && !errors.land_size
+                  'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500': errors.size,
+                  'border-green-500 bg-green-50': size > 0 && !errors.size
                 }"
-                aria-describedby="land_size-error"
+                aria-describedby="size-error"
               />
-              <div v-if="errors.land_size" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <div v-if="errors.size" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
               </div>
-              <div v-else-if="land_size > 0" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <div v-else-if="size > 0" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
               </div>
             </div>
-            <p v-if="errors.land_size" id="land_size-error" class="mt-2 text-sm text-red-600 flex items-center">
+            <p v-if="errors.size" id="size-error" class="mt-2 text-sm text-red-600 flex items-center">
               <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
               </svg>
-              {{ errors.land_size }}
+              {{ errors.size }}
             </p>
           </div>
 
-          <div class="sm:col-span-6">
-            <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <div class="relative">
-              <input
-                id="address"
-                v-model="address"
-                type="text"
-                placeholder="Enter full property address"
-                class="px-4 py-2.5 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-30 transition duration-150 ease-in-out"
-                :class="{
-                  'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500': errors.address,
-                  'border-green-500 bg-green-50': address && !errors.address
-                }"
-                aria-describedby="address-error"
-              />
-              <div v-if="errors.address" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              <div v-else-if="address" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <p v-if="errors.address" id="address-error" class="mt-2 text-sm text-red-600 flex items-center">
-              <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-              </svg>
-              {{ errors.address }}
-            </p>
-          </div>
+
 
           <div class="sm:col-span-3">
             <label for="ownership_type" class="block text-sm font-medium text-gray-700 mb-1">Ownership Type</label>
@@ -270,19 +235,19 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="sm:col-span-6">
-            <label for="proof_document" class="block text-sm font-medium text-gray-700 mb-1">
-              Proof of Ownership (PDF, JPEG, PNG)
+            <label for="supporting_document" class="block text-sm font-medium text-gray-700 mb-1">
+              Supporting Documents (PDF, JPEG, PNG)
             </label>
             <div
               class="mt-1 flex justify-center px-6 pt-6 pb-6 border-2 border-dashed rounded-lg transition-colors duration-200 ease-in-out"
               :class="{
                 'border-red-300 bg-red-50': documentError,
-                'border-green-300 bg-green-50': proofDocument && !documentError,
-                'border-gray-300 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50': !documentError && !proofDocument
+                'border-green-300 bg-green-50': supportingDocument && !documentError,
+                'border-gray-300 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50': !documentError && !supportingDocument
               }"
             >
               <div class="space-y-2 text-center">
-                <div v-if="proofDocument && !documentError" class="mx-auto h-12 w-12 text-green-500">
+                <div v-if="supportingDocument && !documentError" class="mx-auto h-12 w-12 text-green-500">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -329,15 +294,15 @@ const onSubmit = handleSubmit(async (values) => {
 
                 <p id="file-upload-description" class="text-xs text-gray-500">PDF, PNG, JPG up to 5MB</p>
 
-                <div v-if="proofDocument && !documentError" class="mt-3 p-3 bg-green-100 rounded-lg border border-green-200">
+                <div v-if="supportingDocument && !documentError" class="mt-3 p-3 bg-green-100 rounded-lg border border-green-200">
                   <div class="flex items-center justify-center space-x-2">
                     <svg class="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
-                    <span class="text-sm font-medium text-green-800">{{ proofDocument.name }}</span>
+                    <span class="text-sm font-medium text-green-800">{{ supportingDocument.name }}</span>
                     <button
                       type="button"
-                      @click="proofDocument = null"
+                      @click="supportingDocument = null"
                       class="text-green-600 hover:text-green-800 transition-colors duration-150"
                     >
                       <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

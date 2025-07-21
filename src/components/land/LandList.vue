@@ -17,12 +17,12 @@ onMounted(async () => {
 })
 
 const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'Approved':
+  switch (status.toLowerCase()) {
+    case 'approved':
       return CheckCircleIcon
-    case 'Under Review':
+    case 'under review':
       return ClockIcon
-    case 'Pending':
+    case 'pending':
       return ClockIcon
     default:
       return ExclamationCircleIcon
@@ -30,12 +30,12 @@ const getStatusIcon = (status: string) => {
 }
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Approved':
+  switch (status.toLowerCase()) {
+    case 'approved':
       return 'text-green-500'
-    case 'Under Review':
+    case 'under review':
       return 'text-yellow-500'
-    case 'Pending':
+    case 'pending':
       return 'text-blue-500'
     default:
       return 'text-gray-500'
@@ -43,12 +43,12 @@ const getStatusColor = (status: string) => {
 }
 
 const getStatusBadgeColor = (status: string) => {
-  switch (status) {
-    case 'Approved':
+  switch (status.toLowerCase()) {
+    case 'approved':
       return 'bg-green-100 text-green-800'
-    case 'Under Review':
+    case 'under review':
       return 'bg-yellow-100 text-yellow-800'
-    case 'Pending':
+    case 'pending':
       return 'bg-blue-100 text-blue-800'
     default:
       return 'bg-gray-100 text-gray-800'
@@ -104,9 +104,9 @@ const formatDate = (dateString: string) => {
             <div class="flex items-center">
               <div class="flex-shrink-0">
                 <component
-                  :is="getStatusIcon(land.status)"
+                  :is="getStatusIcon(land.statusa)"
                   class="h-6 w-6"
-                  :class="getStatusColor(land.status)"
+                  :class="getStatusColor(land.statusa)"
                 />
               </div>
               <div class="ml-4">
@@ -116,34 +116,33 @@ const formatDate = (dateString: string) => {
                   </p>
                   <span
                     class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="getStatusBadgeColor(land.status)"
+                    :class="getStatusBadgeColor(land.statusa)"
                   >
-                    {{ land.status }}
+                    {{ land.statusa }}
                   </span>
                 </div>
                 <div class="mt-2 flex">
                   <div class="flex items-center text-sm text-gray-500">
-                    <p>{{ land.address }}</p>
+                    <p>{{ land.ownership_type }} ownership</p>
                   </div>
                 </div>
               </div>
             </div>
             <div class="flex flex-col items-end">
-              <p class="text-sm text-gray-900">{{ land.land_size }} sq meters</p>
-              <p class="text-sm text-gray-500">{{ land.ownership_type }}</p>
+              <p class="text-sm text-gray-900">{{ land.size }} sq meters</p>
               <p v-if="land.created_at" class="text-xs text-gray-400 mt-1">
                 Applied: {{ formatDate(land.created_at) }}
               </p>
             </div>
           </div>
-          
-          <div v-if="land.proof_document" class="mt-2">
+
+          <div v-if="land.supporting_documents" class="mt-2">
             <a
-              :href="land.proof_document"
+              :href="land.supporting_documents"
               target="_blank"
               class="text-sm text-indigo-600 hover:text-indigo-500"
             >
-              View proof document →
+              View supporting documents →
             </a>
           </div>
         </div>
