@@ -14,7 +14,7 @@ const authStore = useAuthStore()
 
 const validationSchema = toFormValidator(
   z.object({
-    parcel_id: z.number().positive('Parcel ID must be a positive number'),
+    parcel_id: z.coerce.number().positive('Please select a parcel to transfer'),
     recipient_name: z.string().min(3, 'Recipient name must be at least 3 characters')
   })
 )
@@ -29,8 +29,7 @@ const [recipient_name] = defineField('recipient_name')
 const contractDocument = ref<File | null>(null)
 const isSubmitting = ref(false)
 const documentError = ref('')
-const showModal = ref(false)
-const formValues = ref<any>(null)
+
 
 const userLands = computed(() => landStore.lands)
 
@@ -64,49 +63,37 @@ const onSubmit = handleSubmit(async (values) => {
     documentError.value = 'Contract document is required'
     return
   }
-  
+
   if (!authStore.user) {
     toast.error('Authentication error', 'You must be logged in to initiate a transfer')
     return
   }
-  
-  // Store values for confirmation
-  formValues.value = { ...values }
-  showModal.value = true
-})
 
-const confirmTransfer = async () => {
-  if (!formValues.value || !contractDocument.value || !authStore.user) {
-    showModal.value = false
-    return
-  }
-  
   isSubmitting.value = true
-  
+
   try {
     // Upload document first
     const { success: uploadSuccess, url, error: uploadError } = await transferStore.uploadContractDocument(
       contractDocument.value,
       authStore.user.id
     )
-    
+
     if (!uploadSuccess || !url) {
       throw new Error(uploadError || 'Failed to upload document')
     }
-    
+
     // Create transfer with document URL
     const { success, error } = await transferStore.createTransfer({
-      parcel_id: formValues.value.parcel_id,
-      recipient_name: formValues.value.recipient_name,
+      parcel_id: values.parcel_id,
+      recipient_name: values.recipient_name,
       contract_document_url: url,
       status: 'Pending'
     })
-    
+
     if (success) {
       toast.success('Transfer initiated', 'Your transfer request has been submitted successfully')
       resetForm()
       contractDocument.value = null
-      showModal.value = false
     } else {
       toast.error('Transfer failed', error || 'Failed to initiate transfer')
     }
@@ -114,13 +101,8 @@ const confirmTransfer = async () => {
     toast.error('Transfer failed', err.message || 'An unexpected error occurred')
   } finally {
     isSubmitting.value = false
-    showModal.value = false
   }
-}
-
-const cancelTransfer = () => {
-  showModal.value = false
-}
+})
 </script>
 
 <template>
@@ -140,7 +122,7 @@ const cancelTransfer = () => {
             <div class="relative">
               <select
                 id="parcel_id"
-                v-model="parcel_id"
+                v-model.number="parcel_id"
                 class="px-4 py-2.5 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-30 transition duration-150 ease-in-out appearance-none"
                 :class="{
                   'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500': errors.parcel_id,
@@ -310,7 +292,7 @@ const cancelTransfer = () => {
             <button
               type="button"
               class="px-6 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="resetForm"
+              @click="() => resetForm()"
               :disabled="isSubmitting"
             >
               <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -337,85 +319,6 @@ const cancelTransfer = () => {
           </div>
         </div>
       </form>
-    </div>
-    
-    <!-- Confirmation Modal -->
-    <div v-if="showModal" class="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <!-- Background overlay -->
-        <div
-          class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"
-          aria-hidden="true"
-          @click="cancelTransfer"
-        ></div>
-
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div class="inline-block align-bottom bg-white rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 border border-gray-200">
-          <div>
-            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-4">
-              <svg class="h-8 w-8 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div class="mt-3 text-center sm:mt-5">
-              <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">
-                Confirm Land Transfer
-              </h3>
-              <div class="mt-4">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
-                  <div class="grid grid-cols-2 gap-4 text-left">
-                    <div>
-                      <p class="text-xs text-gray-500 uppercase font-semibold">Parcel ID</p>
-                      <p class="text-sm font-medium text-gray-900">{{ formValues?.parcel_id }}</p>
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500 uppercase font-semibold">Recipient ID</p>
-                      <p class="text-sm font-medium text-gray-900">{{ formValues?.recipient_id }}</p>
-                    </div>
-                    <div class="col-span-2">
-                      <p class="text-xs text-gray-500 uppercase font-semibold">Document</p>
-                      <p class="text-sm font-medium text-gray-900 truncate">{{ contractDocument?.name }}</p>
-                    </div>
-                  </div>
-                </div>
-                <p class="text-sm text-gray-500">
-                  Are you sure you want to transfer this land? This action cannot be undone.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="mt-6 sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-            <button
-              type="button"
-              class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="confirmTransfer"
-              :disabled="isSubmitting"
-            >
-              <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <svg v-else class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-              <span v-if="isSubmitting">Processing...</span>
-              <span v-else>Confirm Transfer</span>
-            </button>
-            <button
-              type="button"
-              class="mt-3 w-full inline-flex justify-center items-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="cancelTransfer"
-              :disabled="isSubmitting"
-            >
-              <svg class="-ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>

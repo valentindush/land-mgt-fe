@@ -28,7 +28,7 @@ export type Land = {
 
 export type Transfer = {
   id: string
-  parcel_id: string
+  parcel_id: number
   recipient_name: string
   contract_document_url?: string
   status: string

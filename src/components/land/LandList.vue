@@ -104,9 +104,9 @@ const formatDate = (dateString: string) => {
             <div class="flex items-center">
               <div class="flex-shrink-0">
                 <component
-                  :is="getStatusIcon(land.statusa)"
+                  :is="getStatusIcon(land.status)"
                   class="h-6 w-6"
-                  :class="getStatusColor(land.statusa)"
+                  :class="getStatusColor(land.status)"
                 />
               </div>
               <div class="ml-4">
@@ -116,9 +116,9 @@ const formatDate = (dateString: string) => {
                   </p>
                   <span
                     class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="getStatusBadgeColor(land.statusa)"
+                    :class="getStatusBadgeColor(land.status)"
                   >
-                    {{ land.statusa }}
+                    {{ land.status }}
                   </span>
                 </div>
                 <div class="mt-2 flex">
@@ -136,9 +136,9 @@ const formatDate = (dateString: string) => {
             </div>
           </div>
 
-          <div v-if="land.supporting_documents" class="mt-2">
+          <div v-if="land.supporting_document_url" class="mt-2">
             <a
-              :href="land.supporting_documents"
+              :href="land.supporting_document_url"
               target="_blank"
               class="text-sm text-indigo-600 hover:text-indigo-500"
             >
