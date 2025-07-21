@@ -14,9 +14,8 @@ export const useLandStore = defineStore('land', () => {
 
     try {
       const { data, error: fetchError } = await supabase
-        .from('land')
+        .from('Land')
         .select('*')
-        .eq('owner_id', userId)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
@@ -37,7 +36,7 @@ export const useLandStore = defineStore('land', () => {
 
     try {
       const { data, error: insertError } = await supabase
-        .from('land')
+        .from('Land')
         .insert([landData])
         .select()
         .single()

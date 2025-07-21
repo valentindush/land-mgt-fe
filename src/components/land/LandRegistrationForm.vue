@@ -87,9 +87,8 @@ const onSubmit = handleSubmit(async (values) => {
       parcel_id: values.parcel_id,
       size: values.size,
       ownership_type: values.ownership_type,
-      supporting_documents: url,
-      statusa: 'Pending',
-      owner_id: authStore.user.id
+      supporting_document_url: url,
+      status: 'Pending',
     })
 
     if (success) {

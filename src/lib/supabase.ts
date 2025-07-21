@@ -21,9 +21,8 @@ export type Land = {
   parcel_id: number
   size: number
   ownership_type: string
-  supporting_documents?: string
-  statusa: string
-  owner_id: string
+  supporting_document_url?: string
+  status: string
   created_at?: string
 }
 

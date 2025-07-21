@@ -14,7 +14,7 @@ const authStore = useAuthStore()
 
 const validationSchema = toFormValidator(
   z.object({
-    parcel_id: z.string().min(3, 'Parcel ID must be at least 3 characters'),
+    parcel_id: z.number().positive('Parcel ID must be a positive number'),
     recipient_name: z.string().min(3, 'Recipient name must be at least 3 characters')
   })
 )
