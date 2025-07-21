@@ -3,7 +3,13 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/counter'
 import { toast } from '@/composables/useToast'
-import { Bars3Icon, UserIcon } from '@heroicons/vue/24/outline'
+import {
+  Bars3Icon,
+  UserIcon,
+  MapIcon,
+  ArrowsRightLeftIcon,
+  ArrowRightOnRectangleIcon
+} from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -24,13 +30,73 @@ const handleLogout = async () => {
 }
 
 const navigation = [
-  { name: 'My Land', href: '/my-land', current: false },
-  { name: 'Transfers', href: '/transfers', current: false }
+  { name: 'My Land', href: '/my-land', icon: MapIcon, current: false },
+  { name: 'Transfers', href: '/transfers', icon: ArrowsRightLeftIcon, current: false }
 ]
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <!-- Authenticated users: Sidebar layout -->
+  <div v-if="isAuthenticated" class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <div class="flex flex-col w-64 bg-white shadow-lg">
+      <!-- Logo/Brand -->
+      <div class="flex items-center justify-center h-16 px-4 bg-indigo-600">
+        <h1 class="text-xl font-bold text-white">Land Management</h1>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-4 py-6 space-y-2">
+        <router-link
+          v-for="item in navigation"
+          :key="item.name"
+          :to="item.href"
+          class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+          active-class="bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600"
+        >
+          <component :is="item.icon" class="w-5 h-5 mr-3" />
+          {{ item.name }}
+        </router-link>
+      </nav>
+
+      <!-- User section -->
+      <div class="px-4 py-4 border-t border-gray-200">
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+              <UserIcon class="w-5 h-5 text-indigo-600" />
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">
+              {{ user?.full_name || user?.email }}
+            </p>
+            <p class="text-xs text-gray-500 truncate">
+              {{ user?.email }}
+            </p>
+          </div>
+        </div>
+
+        <button
+          @click="handleLogout"
+          class="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+        >
+          <ArrowRightOnRectangleIcon class="w-5 h-5 mr-3" />
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+        <slot />
+      </main>
+    </div>
+  </div>
+
+  <!-- Unauthenticated users: Top navigation layout -->
+  <div v-else class="min-h-screen bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-white shadow-sm border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,37 +105,9 @@ const navigation = [
             <div class="flex-shrink-0 flex items-center">
               <h1 class="text-xl font-bold text-gray-900">Land Management</h1>
             </div>
-            <div v-if="isAuthenticated" class="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <router-link
-                v-for="item in navigation"
-                :key="item.name"
-                :to="item.href"
-                class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
-                active-class="border-indigo-500 text-gray-900"
-              >
-                {{ item.name }}
-              </router-link>
-            </div>
           </div>
-          
-          <div v-if="isAuthenticated" class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2">
-                  <UserIcon class="h-5 w-5 text-gray-400" />
-                  <span class="text-sm text-gray-700">{{ user?.full_name || user?.email }}</span>
-                </div>
-                <button
-                  @click="handleLogout"
-                  class="bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div v-else class="flex items-center space-x-4">
+
+          <div class="flex items-center space-x-4">
             <router-link
               to="/login"
               class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"

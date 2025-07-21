@@ -40,8 +40,8 @@ const onSubmit = handleSubmit(async (values) => {
     const { success, error } = await authStore.signUp(values.email, values.password, values.fullName)
     
     if (success) {
-      toast.success('Registration successful', 'Your account has been created')
-      router.push('/my-land')
+      toast.success('Registration successful', 'Your account has been created. Please check your email for verification instructions.')
+      router.push('/login')
     } else {
       toast.error('Registration failed', error || 'Please check your information and try again')
     }

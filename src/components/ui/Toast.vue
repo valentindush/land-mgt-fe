@@ -74,7 +74,7 @@ const handleClose = () => {
 
 <template>
   <div
-    class="max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden border-l-4 transition-all duration-300 ease-in-out"
+    class="w-[300px] shadow-lg rounded-lg pointer-events-auto overflow-hidden border-l-4 transition-all duration-300 ease-in-out"
     :class="[bgColor, borderColor]"
   >
     <div class="p-4">
@@ -83,8 +83,8 @@ const handleClose = () => {
           <component :is="iconComponent" class="h-6 w-6" :class="iconColor" />
         </div>
         <div class="ml-3 w-0 flex-1 pt-0.5">
-          <p class="text-sm font-medium text-gray-900">{{ toast.title }}</p>
-          <p v-if="toast.message" class="mt-1 text-sm text-gray-500">{{ toast.message }}</p>
+          <p class="text-sm font-medium text-gray-900">{{ props.toast.title }}</p>
+          <p v-if="props.toast.message" class="mt-1 text-sm text-gray-500">{{ props.toast.message }}</p>
         </div>
         <div class="ml-4 flex-shrink-0 flex">
           <button
